@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#12020a">
+  <meta name="color-scheme" content="dark">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="Nasze zeszyty — notatki zapisywane w bazie i wspólna galeria zdjęć.">
+  <title>nasze zeszyty</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E%E2%9D%A4%EF%B8%8F%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/menu.css">
+</head>
+<body>
+  <span class="bg-glow" aria-hidden="true"></span>
+
+  <main class="app">
+    <header class="hero">
+      <p class="hero__eyebrow">Kocham cie skarbie</p>
+      <h1 class="hero__title">Nasze zeszyty</h1>
+      <p class="hero__lead">
+        Mam nadzieję, że wybaczysz mi moje niedoskonałości, błędy i chwile, w których nie potrafiłem być taki, jakiego potrzebowałaś. Wiem, że nie zawsze wszystko było idealne, ale chcę, żebyś wiedziała, że niezależnie od tego, co się stanie nigdy nie bede zalowac tej relacji Cieszę się, że mogłem Cię poznać, przeżyć z Tobą te wszystkie momenty i poczuć coś tak wyjątkowego. ❤️
+      </p>
+    </header>
+
+    <!-- ============ OD KIEDY SIĘ ZNAMY ============ -->
+    <section class="countdown countdown--since" data-since aria-labelledby="tytul-poznania">
+      <div class="countdown__intro">
+        <p class="countdown__eyebrow">od pierwszego dnia</p>
+        <h2 class="countdown__title" id="tytul-poznania">
+          Poznaliśmy się <span data-since-date>18 marca 2025</span>
+        </h2>
+        <p class="countdown__note">i od tamtej chwili liczymy wszystko razem</p>
+      </div>
+
+      <div class="countdown__clock" role="timer" aria-live="off">
+        <div class="countdown__unit">
+          <span class="countdown__value" data-since-days>—</span>
+          <span class="countdown__label">dni razem</span>
+        </div>
+        <div class="countdown__unit">
+          <span class="countdown__value" data-since-hours>00</span>
+          <span class="countdown__label">godzin</span>
+        </div>
+        <div class="countdown__unit">
+          <span class="countdown__value" data-since-minutes>00</span>
+          <span class="countdown__label">minut</span>
+        </div>
+        <div class="countdown__unit">
+          <span class="countdown__value" data-since-seconds>00</span>
+          <span class="countdown__label">sekund</span>
+        </div>
+      </div>
+
+      <div class="countdown__tools">
+        <button class="countdown__link" type="button" data-since-edit>zmień datę poznania</button>
+        <label class="sr-only" for="since-input">Data poznania się</label>
+        <input class="countdown__input" id="since-input" type="date" data-since-input hidden>
+      </div>
+    </section>
+
+    <!-- ============ ODLICZANIE DO SPOTKANIA ============ -->
+    <section class="countdown" data-countdown aria-labelledby="tytul-odliczania">
+      <div class="countdown__intro">
+        <p class="countdown__eyebrow">odliczanie</p>
+        <h2 class="countdown__title" id="tytul-odliczania">Do naszego spotkania</h2>
+        <p class="countdown__note" data-cd-note>zostało nam</p>
+      </div>
+
+      <div class="countdown__clock" role="timer" aria-live="off">
+        <div class="countdown__unit">
+          <span class="countdown__value" data-cd-days>7</span>
+          <span class="countdown__label">dni</span>
+        </div>
+        <div class="countdown__unit">
+          <span class="countdown__value" data-cd-hours>00</span>
+          <span class="countdown__label">godzin</span>
+        </div>
+        <div class="countdown__unit">
+          <span class="countdown__value" data-cd-minutes>00</span>
+          <span class="countdown__label">minut</span>
+        </div>
+        <div class="countdown__unit">
+          <span class="countdown__value" data-cd-seconds>00</span>
+          <span class="countdown__label">sekund</span>
+        </div>
+      </div>
+
+      <div class="countdown__tools">
+        <button class="countdown__link" type="button" data-cd-edit>zmień datę spotkania</button>
+        <label class="sr-only" for="cd-input">Data i godzina spotkania</label>
+        <input class="countdown__input" id="cd-input" type="datetime-local" data-cd-input hidden>
+      </div>
+    </section>
+
+    <!-- ============ HUMOR DNIA ============ -->
+    <section class="mood" data-mood aria-labelledby="tytul-humoru">
+      <div class="mood__head">
+        <p class="mood__eyebrow">check-in</p>
+        <h2 class="mood__title" id="tytul-humoru">Jaki masz dziś humor?</h2>
+        <p class="mood__note" data-mood-note>dotknij, żeby zapisać</p>
+      </div>
+
+      <div class="mood__options">
+        <button class="mood__chip" type="button" data-mood-value="radosny" aria-pressed="false">dobry hihi</button>
+        <button class="mood__chip" type="button" data-mood-value="zakochany" aria-pressed="false">zmeczona</button>
+        <button class="mood__chip" type="button" data-mood-value="spokojny" aria-pressed="false">nudny</button>
+        <button class="mood__chip" type="button" data-mood-value="zadumany" aria-pressed="false">tesknie</button>
+        <button class="mood__chip" type="button" data-mood-value="zmeczony" aria-pressed="false">placze</button>
+        <button class="mood__chip" type="button" data-mood-value="tesknie" aria-pressed="false">zla</button>
+      </div>
+    </section>
+
+    <!-- ============ TWÓJ ZESZYT ============ -->
+    <section class="notebook" data-notebook="twoj" aria-labelledby="tytul-twoj">
+      <div class="notebook__head">
+        <h2 class="notebook__title" id="tytul-twoj">Twój zeszyt</h2>
+        <p class="notebook__status" data-status>wczytywanie…</p>
+      </div>
+
+      <div class="book">
+        <span class="book__spine" aria-hidden="true"></span>
+
+        <article class="page">
+          <div class="page__head">
+            <input class="page__title" data-title type="text" placeholder="Tytuł strony…"
+                   maxlength="120" aria-label="Tytuł strony" autocomplete="off">
+            <span class="page__date" data-date>—</span>
+          </div>
+          <label class="sr-only" for="body-twoj">Treść strony — Twój zeszyt</label>
+          <textarea class="page__body" id="body-twoj" data-body placeholder="Zacznij pisać…"></textarea>
+          <div class="page__nav">
+            <button class="page__step" type="button" data-prev>‹ poprzednia</button>
+            <span class="page__counter" data-counter>strona 1 z 1</span>
+            <button class="page__step" type="button" data-next>następna ›</button>
+          </div>
+        </article>
+
+        <div class="book__actions">
+          <button class="btn btn--primary" type="button" data-add>+ nowa strona</button>
+          <button class="btn" type="button" data-save>zapisz</button>
+          <button class="btn btn--ghost" type="button" data-remove>usuń stronę</button>
+        </div>
+        <p class="book__hint">zapisuje się samo · Ctrl / ⌘ + S też działa</p>
+      </div>
+    </section>
+
+    <!-- ============ MÓJ ZESZYT ============ -->
+    <section class="notebook" data-notebook="moj" aria-labelledby="tytul-moj">
+      <div class="notebook__head">
+        <h2 class="notebook__title" id="tytul-moj">Mój zeszyt</h2>
+        <p class="notebook__status" data-status>wczytywanie…</p>
+      </div>
+
+      <div class="book">
+        <span class="book__spine" aria-hidden="true"></span>
+
+        <article class="page">
+          <div class="page__head">
+            <input class="page__title" data-title type="text" placeholder="Tytuł strony…"
+                   maxlength="120" aria-label="Tytuł strony" autocomplete="off">
+            <span class="page__date" data-date>—</span>
+          </div>
+          <label class="sr-only" for="body-moj">Treść strony — Mój zeszyt</label>
+          <textarea class="page__body" id="body-moj" data-body placeholder="Zacznij pisać…"></textarea>
+          <div class="page__nav">
+            <button class="page__step" type="button" data-prev>‹ poprzednia</button>
+            <span class="page__counter" data-counter>strona 1 z 1</span>
+            <button class="page__step" type="button" data-next>następna ›</button>
+          </div>
+        </article>
+
+        <div class="book__actions">
+          <button class="btn btn--primary" type="button" data-add>+ nowa strona</button>
+          <button class="btn" type="button" data-save>zapisz</button>
+          <button class="btn btn--ghost" type="button" data-remove>usuń stronę</button>
+        </div>
+        <p class="book__hint">zapisuje się samo · Ctrl / ⌘ + S też działa</p>
+      </div>
+    </section>
+
+    <!-- ============ SEKRET — zapisany po cichu ============ -->
+    <section class="secret" data-secret aria-labelledby="tytul-sekretu">
+      <div class="secret__head">
+        <p class="secret__eyebrow">po cichu</p>
+        <h2 class="secret__title" id="tytul-sekretu">Sekret</h2>
+        <p class="secret__lead">
+          Napisz coś, czego dziś nie zobaczysz. Zamkniemy to w kopercie
+          i otworzymy przy naszym spotkaniu.
+        </p>
+      </div>
+
+      <form class="secret__form" data-secret-form>
+        <label class="sr-only" for="secret-text">Treść sekretu</label>
+        <textarea class="secret__input" id="secret-text" data-secret-input rows="3"
+                  maxlength="4000" placeholder="Tylko dla nas…"></textarea>
+        <div class="secret__actions">
+          <button class="btn btn--primary" type="submit">zapisz po cichu</button>
+          <p class="secret__status" data-secret-status role="status"></p>
+        </div>
+      </form>
+
+      <ul class="secret__list" data-secret-list></ul>
+    </section>
+
+    <!-- ============ GALERIA ============ -->
+    <section class="gallery" id="galeria" aria-labelledby="tytul-galerii">
+      <div class="gallery__head">
+        <div>
+          <h2 class="gallery__title" id="tytul-galerii">Galeria</h2>
+          <p class="gallery__lead">Nasze wspomnienia — zdjęcia i nagrania w jednym miejscu.</p>
+        </div>
+      </div>
+
+      <div class="gallery__tools">
+        <p class="gallery__status" data-gallery-status role="status"></p>
+        <div class="gallery__uploads">
+          <button class="btn btn--small" type="button" data-upload>＋ zdjęcia / nagrania</button>
+          <button class="btn btn--small btn--record" type="button" data-record aria-pressed="false">
+            <span class="btn__dot" aria-hidden="true"></span>
+            <span data-record-label>nagraj</span>
+          </button>
+          <input data-upload-input type="file" accept="image/*,audio/*,video/*" multiple hidden>
+        </div>
+      </div>
+
+      <div class="gallery__drop" data-drop>
+        <div class="gallery__grid" data-grid></div>
+        <p class="gallery__empty" data-empty hidden></p>
+      </div>
+
+      <p class="gallery__hint">
+        Zdjęcia i nagrania trafiają do <code>photos/wspomnienia</code>.
+        Dodasz je tutaj — z telefonu, z mikrofonu albo przeciągając na stronę.
+      </p>
+    </section>
+
+    <!-- ============ STOPKA: kocham cię ============ -->
+    <footer class="love">
+      <p class="love__text">kocham cię</p>
+    </footer>
+
+    <!-- linia oddzielająca „kocham cię” od sekcji zerwania -->
+    <div class="divider" aria-hidden="true"><span class="divider__mark"></span></div>
+
+    <!-- ============ PO CO JEST „ZERWIJ POŁĄCZENIE" (tekst co do literki) ============ -->
+    <section class="letter" data-letter aria-labelledby="tytul-listu">
+      <p class="letter__eyebrow">jeśli to się stało i zerwalismy</p>
+      <h2 class="letter__title" id="tytul-listu">zerwij połączenie</h2>
+
+      <p class="letter__text">
+        nie wiem czy to sie stalo jesli tak to przepraszam i naprawde bede tesknic za tym wszystkim
+      </p>
+      <p class="letter__text">
+        jesli tak kliknij zerwij polaczenie strona bedzie dzialac ale zegar padnie a serce przestanie bic
+      </p>
+      <p class="letter__text">
+        pamietaj ze jakby sie cos dzialo wiesz gdzie mieszkam choc nie jestesmy razem to moge ci pomoc zegnaj
+      </p>
+      <p class="letter__text">
+        poradziny sobie z tym zawsze bedziesz niepowtarzalna
+      </p>
+      <p class="letter__text">
+        niewazne kto nas zastapi mam nadzieje ze bedzie lepszy niz ja i potraktuje cie lepiej
+      </p>
+      <p class="letter__text letter__text--last">
+        paaaaaa kocham cie w innym swiecie
+      </p>
+
+      <p class="letter__tools">
+        <button class="letter__restore" type="button" data-restore>to była pomyłka — przywróć</button>
+      </p>
+    </section>
+
+    <!-- ============ ZERWIJ POŁĄCZENIE (dyskretnie, na samym dole) ============ -->
+    <p class="farewell">
+      <button class="farewell__button" type="button" data-breakup>zerwij połączenie</button>
+    </p>
+  </main>
+
+  <div class="lightbox" data-lightbox hidden>
+    <button class="lightbox__close" type="button" data-lb-close aria-label="Zamknij podgląd">×</button>
+    <button class="lightbox__nav lightbox__nav--prev" type="button" data-lb-prev aria-label="Poprzednie wspomnienie">‹</button>
+    <img class="lightbox__img" data-lb-img alt="" hidden>
+    <audio class="lightbox__audio" data-lb-audio controls hidden></audio>
+    <video class="lightbox__video" data-lb-video controls playsinline hidden></video>
+    <button class="lightbox__nav lightbox__nav--next" type="button" data-lb-next aria-label="Następne wspomnienie">›</button>
+    <p class="lightbox__caption" data-lb-caption></p>
+    <p class="lightbox__counter" data-lb-counter></p>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
+

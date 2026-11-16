@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#12020a">
+  <meta name="color-scheme" content="dark">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="kocham cię">
+  <meta name="description" content="Kocham Cię — animowane serce z napisu, ładowanie dla desktopu i Androida.">
+  <title>kocham cię</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E%E2%9D%A4%EF%B8%8F%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="stage" id="stage">
+    <canvas class="heart-canvas" id="heart" aria-hidden="true"></canvas>
+
+    <p class="sr-only">Kocham Cię</p>
+
+    <div class="fallback" id="fallback">
+      <h1>kocham cię</h1>
+    </div>
+
+    <div class="loading" aria-hidden="true">
+      <span class="loading__bar"></span>
+    </div>
+  </main>
+
+  <noscript>
+    <style>
+      .fallback { display: grid; }
+      .loading { display: none; }
+      .heart-canvas { display: none; }
+    </style>
+  </noscript>
+
+  <script>
+    /* Animowane serce z napisu "kocham cię".
+       Czysty canvas 2D — bez zależności, działa offline. */
+    (function () {
+      'use strict';
+
+      var stage = document.getElementById('stage');
+      var canvas = document.getElementById('heart');
+      var fallback = document.getElementById('fallback');
+      var ctx = canvas && canvas.getContext ? canvas.getContext('2d') : null;
+
+      /* brak canvas -> pokazujemy klasyczny napis */
+      if (!ctx) {
+        if (fallback) fallback.classList.add('is-visible');
+        if (canvas) canvas.style.display = 'none';
+        return;
+      }
+
+      var motionQuery = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+      var reduceMotion = !!(motionQuery && motionQuery.matches);
+      var sadMode = false;
+
+      /* ---------- geometria serca (krzywa parametryczna) ---------- */
+
+      var N = 1400;                 // liczba punktów obrysu
+      var PX = new Float64Array(N + 1);   // x w jednostkach (wysokość serca = 2)
+      var PY = new Float64Array(N + 1);   // y w jednostkach (oś canvasu)
+      var CUM = new Float64Array(N + 1);  // narastająca długość łuku
+      var ANG = new Float64Array(N + 1);  // kąt stycznej (odwinięty)
+      var TOTAL = 0;                      // obwód w jednostkach
+
+      function rawHeart(t) {
+        var s = Math.sin(t);
+        return [
+          16 * s * s * s,
+          13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)
+        ];
+      }
+
+      (function buildHeart() {
+        var i, t, p;
+        var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+
+        for (i = 0; i <= 2000; i++) {
+          t = (i / 2000) * Math.PI * 2;
+          p = rawHeart(t);
+          if (p[0] < minX) minX = p[0];
+          if (p[0] > maxX) maxX = p[0];
+          if (p[1] < minY) minY = p[1];
+          if (p[1] > maxY) maxY = p[1];
+        }
+
+        var midX = (minX + maxX) / 2;
+        var midY = (minY + maxY) / 2;
+        var half = (maxY - minY) / 2;   // połowa wysokości -> skala jednostkowa
+
+        for (i = 0; i <= N; i++) {
+          t = (i / N) * Math.PI * 2;
+          p = rawHeart(t);
+          PX[i] = (p[0] - midX) / half;
+          PY[i] = -(p[1] - midY) / half;
+        }
+
+        CUM[0] = 0;
+        for (i = 1; i <= N; i++) {
+          CUM[i] = CUM[i - 1] + Math.hypot(PX[i] - PX[i - 1], PY[i] - PY[i - 1]);
+        }
+        TOTAL = CUM[N];
+
+        /* kąty stycznej w każdym punkcie — odwinięte, aby interpolacja była gładka */
+        var prev = 0;
+        for (i = 0; i <= N; i++) {
+          var next = (i + 1) % N;
+          var before = (i - 1 + N) % N;
+          var ang = Math.atan2(PY[next] - PY[before], PX[next] - PX[before]);
+          if (i === 0) prev = ang;
+          while (ang - prev > Math.PI) ang -= Math.PI * 2;
+          while (ang - prev < -Math.PI) ang += Math.PI * 2;
+          ANG[i] = ang;
+          prev = ang;
+        }
+      })();
+
+      /* indeks segmentu dla podanej długości łuku (wyszukiwanie binarne) */
+      function locate(s) {
+        if (s <= 0) return 0;
+        if (s >= TOTAL) return N - 1;
+        var lo = 0, hi = N;
+        while (hi - lo > 1) {
+          var mid = (lo + hi) >> 1;
+          if (CUM[mid] <= s) lo = mid;
+          else hi = mid;
+        }
+        return lo;
+      }
+
+      /* czy punkt (jednostkowy) leży wewnątrz serca */
+      function insideHeart(x, y) {
+        var inside = false;
+        for (var i = 0, j = N - 1; i < N; j = i++) {
+          var xi = PX[i], yi = PY[i], xj = PX[j], yj = PY[j];
+          if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
+            inside = !inside;
+          }
+        }
+        return inside;
+      }
+
+      /* ---------- stan i konfiguracja ---------- */
+
+      /* kolejne pierścienie napisu: skala obrysu, kierunek, prędkość, przezroczystość */
+      var RING_DEF = [
+        { scale: 1.000, dir: 1, speed: 0.20, alpha: 1.00, size: 1.00, phrase: 'kocham cię · ' },
+        { scale: 0.805, dir: -1, speed: 0.15, alpha: 0.74, size: 0.86, phrase: 'kocham cię ' },
+        { scale: 0.610, dir: 1, speed: 0.11, alpha: 0.52, size: 0.72, phrase: 'kocham cię · ' }
+      ];
+
+      var W = 0, H = 0, DPR = 1, R = 0, CX = 0, CY = 0;
+      var rings = [];
+      var dust = null, dustSpan = 0;
+      var heartPath = null;
+      var burst = 0;
+      var clock = 0, last = 0, raf = 0, running = false;
+
+      /* podziałka napisu na obrysie serca */
+      function buildRings() {
+        rings.length = 0;
+        var baseFont = R * 0.104;
+
+        for (var r = 0; r < RING_DEF.length; r++) {
+          var def = RING_DEF[r];
+          var scalePx = R * def.scale;                 // obrys w pikselach
+          var fontPx = Math.max(9, baseFont * def.size);
+          var perimeter = TOTAL * scalePx;
+          var stepPx = fontPx * 1.02;
+          var count = Math.max(10, Math.round(perimeter / stepPx));
+          stepPx = perimeter / count;                  // równy rozstaw = brak szwu
+
+          var letters = [];
+          for (var k = 0; k < count; k++) {
+            var f = k / count;
+            var hue = 332 + 20 * Math.sin(f * Math.PI * 2 + r);
+            var light = 78 + 12 * Math.sin(f * Math.PI * 4 + r * 1.7);
+            letters.push({
+              char: def.phrase.charAt(k % def.phrase.length),
+              su: (k * stepPx) / scalePx,              // pozycja w jednostkach łuku
+              color: 'hsla(' + hue.toFixed(0) + ', 100%, ' + light.toFixed(0) + '%, ' + def.alpha + ')'
+            });
+          }
+
+          rings.push({
+            letters: letters,
+            scalePx: scalePx,
+            font: 'italic 600 ' + fontPx.toFixed(1) +
+                  'px "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+            rotation: (def.dir * def.speed) / def.scale,  // jednostki łuku na sekundę
+            alpha: def.alpha
+          });
+        }
+      }
+
+      /* obrys serca jako Path2D — do delikatnego wypełnienia poświatą */
+      function buildPath() {
+        if (typeof Path2D === 'undefined') { heartPath = null; return; }
+        var p = new Path2D();
+        for (var i = 0; i <= N; i++) {
+          var x = PX[i] * R;
+          var y = PY[i] * R;
+          if (i === 0) p.moveTo(x, y);
+          else p.lineTo(x, y);
+        }
+        p.closePath();
+        heartPath = p;
+      }
+
+      /* pył w kształcie serca — rysowany raz, potem tylko podświetlany */
+      function buildDust() {
+        dustSpan = R * 2.4;
+        var px = Math.max(1, Math.round(dustSpan * DPR));
+        var layer = document.createElement('canvas');
+        layer.width = px;
+        layer.height = px;
+
+        var g = layer.getContext('2d');
+        if (!g) { dust = null; return; }
+
+        g.scale(px / dustSpan, px / dustSpan);
+        g.translate(dustSpan / 2, dustSpan / 2);
+        g.globalCompositeOperation = 'lighter';
+
+        var wanted = Math.round(560 + R * 1.1);
+        var placed = 0;
+        var guard = 0;
+
+        while (placed < wanted && guard < wanted * 40) {
+          guard++;
+          var ux = (Math.random() * 2 - 1) * 1.18;
+          var uy = (Math.random() * 2 - 1) * 1.05;
+          if (!insideHeart(ux, uy)) continue;
+          placed++;
+
+          var x = ux * R;
+          var y = uy * R;
+          var rad = 0.5 + Math.random() * 1.6;
+          var alpha = 0.18 + Math.random() * 0.6;
+
+          if (Math.random() < 0.045) {
+            var blob = g.createRadialGradient(x, y, 0, x, y, rad * 8);
+            blob.addColorStop(0, 'rgba(255, 195, 228, ' + (alpha * 0.8).toFixed(3) + ')');
+            blob.addColorStop(1, 'rgba(255, 110, 180, 0)');
+            g.fillStyle = blob;
+            g.beginPath();
+            g.arc(x, y, rad * 8, 0, Math.PI * 2);
+            g.fill();
+          } else {
+            var green = 205 + ((Math.random() * 45) | 0);
+            g.fillStyle = 'rgba(255, ' + green + ', 232, ' + alpha.toFixed(3) + ')';
+            g.beginPath();
+            g.arc(x, y, rad, 0, Math.PI * 2);
+            g.fill();
+          }
+        }
+
+        dust = layer;
+      }
+
+      /* ---------- dopasowanie do ekranu (desktop / Android) ---------- */
+
+      function resize() {
+        var rect = stage.getBoundingClientRect();
+        W = Math.max(1, Math.round(rect.width || window.innerWidth));
+        H = Math.max(1, Math.round(rect.height || window.innerHeight));
+        DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+        canvas.width = Math.round(W * DPR);
+        canvas.height = Math.round(H * DPR);
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+
+        R = Math.min(W * 0.40, H * 0.36, 430);
+        R = Math.max(60, R);   // serce zawsze mieści się w ekranie
+
+        CX = W / 2;
+        CY = H / 2 - Math.min(26, H * 0.025);
+
+        buildRings();
+        buildDust();
+        buildPath();
+
+        if (reduceMotion) drawFrame(0);
+      }
+
+      /* ---------- rytm bicia serca ---------- */
+
+      function beat(t) {
+        var p = (t % 1.15) / 1.15;
+        var d1 = (p - 0.10) / 0.055;
+        var d2 = (p - 0.27) / 0.075;
+        return Math.min(1, Math.exp(-d1 * d1) + 0.55 * Math.exp(-d2 * d2));
+      }
+
+      /* ---------- rysowanie ---------- */
+
+      function drawRing(ring, time) {
+        var letters = ring.letters;
+        var advance = ring.rotation * time;
+        var scalePx = ring.scalePx;
+
+        ctx.font = ring.font;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        for (var i = 0; i < letters.length; i++) {
+          var letter = letters[i];
+          var s = (letter.su + advance) % TOTAL;
+          if (s < 0) s += TOTAL;
+
+          var idx = locate(s);
+          var seg = CUM[idx + 1] - CUM[idx];
+          var f = seg > 0 ? (s - CUM[idx]) / seg : 0;
+
+          var ux = PX[idx] + (PX[idx + 1] - PX[idx]) * f;
+          var uy = PY[idx] + (PY[idx + 1] - PY[idx]) * f;
+          var angle = ANG[idx] + (ANG[idx + 1] - ANG[idx]) * f;
+
+          ctx.save();
+          ctx.translate(ux * scalePx, uy * scalePx);
+          ctx.rotate(angle);
+          ctx.fillStyle = letter.color;
+          ctx.fillText(letter.char, 0, 0);
+          ctx.restore();
+        }
+      }
+
+      function drawFrame(time) {
+        ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+        ctx.clearRect(0, 0, W, H);
+
+        var b = beat(time);
+        var pulse = 1 + 0.055 * b + burst;
+
+        ctx.save();
+        ctx.translate(CX, CY);
+        ctx.scale(pulse, pulse);
+
+        /* poświata bijąca razem z sercem */
+        var glow = ctx.createRadialGradient(0, 0, R * 0.06, 0, 0, R * 1.45);
+        glow.addColorStop(0, 'rgba(255, 140, 190, ' + (0.30 + 0.22 * b).toFixed(3) + ')');
+        glow.addColorStop(0.35, 'rgba(255, 70, 145, ' + (0.20 + 0.13 * b).toFixed(3) + ')');
+        glow.addColorStop(0.62, 'rgba(255, 40, 120, ' + (0.11 + 0.07 * b).toFixed(3) + ')');
+        glow.addColorStop(0.82, 'rgba(150, 10, 75, 0.05)');
+        glow.addColorStop(1, 'rgba(80, 0, 40, 0)');
+
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(0, 0, R * 1.45, 0, Math.PI * 2);
+        ctx.fill();
+
+        /* delikatnie świecące wnętrze serca */
+        if (heartPath) {
+          var inner = ctx.createLinearGradient(0, -R, 0, R);
+          inner.addColorStop(0, 'rgba(255, 125, 180, ' + (0.10 + 0.05 * b).toFixed(3) + ')');
+          inner.addColorStop(0.55, 'rgba(255, 60, 130, 0.07)');
+          inner.addColorStop(1, 'rgba(255, 30, 100, 0.02)');
+          ctx.fillStyle = inner;
+          ctx.fill(heartPath);
+        }
+
+        /* pył wewnątrz serca */
+        if (dust) {
+          ctx.globalAlpha = 0.45 + 0.4 * b;
+          ctx.drawImage(dust, -dustSpan / 2, -dustSpan / 2, dustSpan, dustSpan);
+          ctx.globalAlpha = 1;
+        }
+
+        ctx.globalCompositeOperation = 'source-over';
+
+        /* napis "kocham cię" biegnący po obrysie serca */
+        for (var i = 0; i < rings.length; i++) {
+          drawRing(rings[i], time);
+        }
+
+        ctx.restore();
+      }
+
+      /* ---------- pętla animacji ---------- */
+
+      function frame(now) {
+        raf = window.requestAnimationFrame(frame);
+
+        if (!last) last = now;
+        var dt = (now - last) / 1000;
+        last = now;
+        if (dt > 0.05) dt = 0.05;    // po powrocie z tła nie robimy skoku
+        clock += dt;
+
+        if (burst > 0) burst = Math.max(0, burst - dt * 0.9);
+
+        drawFrame(clock);
+      }
+
+      function start() {
+        if (running || reduceMotion || sadMode || document.hidden) return;
+        running = true;
+        last = 0;
+        raf = window.requestAnimationFrame(frame);
+      }
+
+      function stop() {
+        running = false;
+        if (raf) window.cancelAnimationFrame(raf);
+        raf = 0;
+      }
+
+      /* zmiana preferencji "mniej ruchu" w trakcie działania */
+      function onMotionChange() {
+        reduceMotion = !!(motionQuery && motionQuery.matches);
+        if (reduceMotion) {
+          stop();
+          drawFrame(0);
+        } else {
+          start();
+        }
+      }
+
+      if (motionQuery) {
+        if (motionQuery.addEventListener) motionQuery.addEventListener('change', onMotionChange);
+        else if (motionQuery.addListener) motionQuery.addListener(onMotionChange);
+      }
+
+      /* oszczędzamy baterię, gdy karta jest w tle */
+      document.addEventListener('visibilitychange', function () {
+        if (document.hidden) stop();
+        else start();
+      });
+
+      /* zmiana rozmiaru okna / obrót telefonu (z lekkim opóźnieniem) */
+      var resizeTimer = 0;
+      function queueResize() {
+        window.clearTimeout(resizeTimer);
+        resizeTimer = window.setTimeout(function () {
+          resize();
+          start();
+        }, 140);
+      }
+
+      window.addEventListener('resize', queueResize, { passive: true });
+      window.addEventListener('orientationchange', queueResize, { passive: true });
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', queueResize, { passive: true });
+      }
+
+      /* dotknięcie / klik — serce bije mocniej */
+      stage.addEventListener('pointerdown', function () {
+        burst = Math.min(0.16, burst + 0.09);
+      }, { passive: true });
+
+      /* start */
+      resize();
+      start();
+
+      /* ---------- po zerwaniu serce przestaje bić ---------- */
+      if (typeof window.fetch === 'function') {
+        window.fetch('api/status', { cache: 'no-store' })
+          .then(function (res) { return res.ok ? res.json() : null; })
+          .then(function (data) {
+            if (!data || data.state !== 'rozstanie') return;
+
+            sadMode = true;
+            canvas.classList.add('is-sad');
+            stop();
+            drawFrame(0);
+          })
+          .catch(function () { /* bez serwera serce bije dalej */ });
+      }
+
+      /* ---------- po 3 sekundach przechodzimy do menu ---------- */
+      var goTimer = 0;
+
+      function goToMenu() {
+        window.clearTimeout(goTimer);
+        window.location.replace('menu.html');
+      }
+
+      goTimer = window.setTimeout(goToMenu, 3000);
+      stage.addEventListener('click', goToMenu);
+    })();
+  </script>
+</body>
+</html>
