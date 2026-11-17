@@ -1,5 +1,5 @@
 /* =========================================================
-   nasze zeszyty — notatki w bazie (SQLite przez API)
+   nasze zeszyty — notatki w bazie (MariaDB przez API PHP)
    oraz galeria zdjęć. Działa też bez serwera (localStorage).
    ========================================================= */
 (function () {
@@ -371,7 +371,7 @@
       state.mode = 'offline';
       state.items = [];
       render();
-      setStatus('galeria wymaga serwera — uruchom python3 server.py', 'error');
+      setStatus('galeria wymaga serwera — uruchom php -S 0.0.0.0:8000 router.php', 'error');
     }
 
     function load() {
@@ -399,7 +399,7 @@
       if (!list.length) {
         empty.hidden = false;
         empty.innerHTML = state.mode === 'offline'
-          ? 'Wspomnienia pojawią się, gdy uruchomisz serwer:<br><strong>python3 server.py</strong>'
+          ? 'Wspomnienia pojawią się, gdy uruchomisz serwer:<br><strong>php -S 0.0.0.0:8000 router.php</strong>'
           : 'Jeszcze pusto. Dodaj zdjęcia lub nagrania przyciskiem <strong>＋ zdjęcia / nagrania</strong>,' +
             ' naciśnij <strong>nagraj</strong> albo wrzuć pliki do <strong>photos/wspomnienia</strong>.';
         return;

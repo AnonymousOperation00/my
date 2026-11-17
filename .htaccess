@@ -1,0 +1,16 @@
+# „nasze zeszyty" — opcjonalna konfiguracja dla Apache (mod_rewrite).
+# Przy wbudowanym serwerze PHP (php -S ... router.php) ten plik nie jest potrzebny.
+#
+# Dla Apache ustaw DocumentRoot na katalog projektu i włącz AllowOverride All.
+Options -Indexes
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # W razie podpięcia w podkatalogu odkomentuj i ustaw właściwą ścieżkę:
+    # RewriteBase /
+
+    # Pliki niedostępne z zewnątrz.
+    RewriteRule ^(data|\.git|__pycache__|config\.php|helpers\.php|schema\.sql|router\.php|\.env)(/|$) - [R=404,L,NC]
+
+    # API -> api/index.php
+    RewriteRule ^api(/.*)?$ api/index.php [L,QSA,NC]
+</IfModule>
